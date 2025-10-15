@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: validy-api
+    env: node
+    buildCommand: bun install && bunx prisma migrate deploy && bunx prisma generate
+    startCommand: bun run start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
