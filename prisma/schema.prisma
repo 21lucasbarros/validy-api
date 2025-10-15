@@ -25,11 +25,12 @@ enum CertificateStatus {
 }
 
 model Certificate {
-  id         Int               @id @default(autoincrement())
-  name       String
-  cnpj       String
-  type       CertificateType   // só aceita A1 ou A3
-  expiresAt  DateTime
-  status     CertificateStatus @default(PENDING)
-  createdAt  DateTime          @default(now())
+  id                  Int               @id @default(autoincrement())
+  name                String
+  cnpj                String
+  type                CertificateType   // só aceita A1 ou A3
+  expiresAt           DateTime
+  notificationEmails  String[]          // array de emails para notificação
+  status              CertificateStatus @default(PENDING)
+  createdAt           DateTime          @default(now())
 }
