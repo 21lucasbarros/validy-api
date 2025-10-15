@@ -32,8 +32,11 @@ const app = new Elysia()
   // criar novo
   .post("/certificates", async ({ body, set }) => {
     try {
+      console.log("Recebendo body:", body);
       const data = CertificateSchema.parse(body);
-      return await prisma.certificate.create({
+      console.log("Dados validados:", data);
+      
+      const certificate = await prisma.certificate.create({
         data: {
           name: data.name,
           cnpj: data.cnpj,
@@ -42,7 +45,11 @@ const app = new Elysia()
           notificationEmails: data.notificationEmails,
         },
       });
+      
+      console.log("Certificado criado:", certificate);
+      return certificate;
     } catch (err) {
+      console.error("Erro ao criar certificado:", err);
       set.status = 400;
       return { error: "Dados inválidos", details: err };
     }
@@ -86,7 +93,7 @@ const app = new Elysia()
   // teste
   .get("/", () => "✅ Validy API is running!")
 
-  .listen(3000);
+  .listen(3333);
 
 console.log(
   `🦊 Validy API running at http://${app.server?.hostname}:${app.server?.port}`
