@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, CertificateType } from "@prisma/client";
 import { z } from "zod";
 import cors from "@elysiajs/cors";
 
@@ -35,17 +35,17 @@ const app = new Elysia()
       console.log("Recebendo body:", body);
       const data = CertificateSchema.parse(body);
       console.log("Dados validados:", data);
-      
+
       const certificate = await prisma.certificate.create({
         data: {
           name: data.name,
           cnpj: data.cnpj,
-          type: data.type,
+          type: data.type as CertificateType,
           expiresAt: new Date(data.expiresAt),
           notificationEmails: data.notificationEmails,
         },
       });
-      
+
       console.log("Certificado criado:", certificate);
       return certificate;
     } catch (err) {
