@@ -411,9 +411,9 @@ vercel --prod
 
 O projeto já possui:
 
-- ✅ `vercel.json` - Configuração de rotas serverless
-- ✅ `api/index.ts` - Handler serverless compatível
-- ✅ Script `vercel-build` - Gera Prisma Client e aplica migrations
+- ✅ `vercel.json` - Configuração de builds e rotas serverless
+- ✅ `api/index.ts` - Handler serverless compatível com Vercel
+- ✅ Script `postinstall` - Gera Prisma Client automaticamente no deploy
 
 ### Testar Localmente com Vercel
 
