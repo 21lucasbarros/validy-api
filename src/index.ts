@@ -2,10 +2,6 @@ import { Elysia } from "elysia";
 import { PrismaClient, CertificateType } from "@prisma/client";
 import { z } from "zod";
 import cors from "@elysiajs/cors";
-import {
-  checkExpiringCertificates,
-  startExpirationCheckCron,
-} from "./jobs/check-expiring-certificates";
 
 const prisma = new PrismaClient();
 
@@ -94,31 +90,10 @@ const app = new Elysia()
     return { message: "Certificado deletado com sucesso" };
   })
 
-  // enviar notificações manualmente (para teste ou envio imediato)
-  .post("/notifications/send-expiring", async ({ body, set }) => {
-    try {
-      const { daysThreshold = 10 } = body as { daysThreshold?: number };
-      const result = await checkExpiringCertificates(daysThreshold);
-      return {
-        message: "Verificação concluída",
-        ...result,
-      };
-    } catch (error) {
-      set.status = 500;
-      return {
-        error: "Erro ao enviar notificações",
-        details: error instanceof Error ? error.message : "Erro desconhecido",
-      };
-    }
-  })
-
   // teste
   .get("/", () => "✅ Validy API is running!")
 
   .listen(3333);
-
-// Iniciar cron job de verificação automática
-startExpirationCheckCron();
 
 console.log(
   `🦊 Validy API running at http://${app.server?.hostname}:${app.server?.port}`
