@@ -2,8 +2,12 @@ import { Elysia } from "elysia";
 import { PrismaClient, CertificateType } from "@prisma/client";
 import { z } from "zod";
 import cors from "@elysiajs/cors";
+import CryptoJS from "crypto-js";
 
 const prisma = new PrismaClient();
+
+// Chave secreta para criptografia (em produção, use variável de ambiente)
+const SECRET_KEY = process.env.ENCRYPTION_KEY || "validy-secret-key-2024";
 
 // validações com Zod
 const CertificateSchema = z.object({
@@ -13,7 +17,8 @@ const CertificateSchema = z.object({
     .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/, "CNPJ inválido"),
   type: z.enum(["A1", "A3"]), // só A1 e A3
   expiresAt: z.string().datetime(),
-  status: z.enum(["PENDING", "COMPLETED"]).optional(),
+  password: z.string().optional(),
+  status: z.enum(["PENDING", "ON_TIME"]).optional(),
 });
 
 const app = new Elysia()
@@ -26,6 +31,29 @@ const app = new Elysia()
     });
   })
 
+  // listar senhas descriptografadas
+  .get("/certificates/passwords", async () => {
+    const certificates = await prisma.certificate.findMany({
+      select: {
+        id: true,
+        name: true,
+        cnpj: true,
+        password: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    // Descriptografar senhas
+    return certificates.map((cert) => ({
+      ...cert,
+      password: cert.password
+        ? CryptoJS.AES.decrypt(cert.password, SECRET_KEY).toString(
+            CryptoJS.enc.Utf8
+          )
+        : null,
+    }));
+  })
+
   // criar novo
   .post("/certificates", async ({ body, set }) => {
     try {
@@ -33,12 +61,18 @@ const app = new Elysia()
       const data = CertificateSchema.parse(body);
       console.log("Dados validados:", data);
 
+      // Criptografar senha se fornecida
+      const encryptedPassword = data.password
+        ? CryptoJS.AES.encrypt(data.password, SECRET_KEY).toString()
+        : null;
+
       const certificate = await prisma.certificate.create({
         data: {
           name: data.name,
           cnpj: data.cnpj,
           type: data.type as CertificateType,
           expiresAt: new Date(data.expiresAt),
+          password: encryptedPassword,
         },
       });
 
@@ -69,12 +103,12 @@ const app = new Elysia()
     }
   })
 
-  // marcar como concluído
+  // marcar como no prazo
   .patch("/certificates/:id/complete", async ({ params }) => {
     const id = Number(params.id);
     return await prisma.certificate.update({
       where: { id },
-      data: { status: "COMPLETED" },
+      data: { status: "ON_TIME" },
     });
   })
 

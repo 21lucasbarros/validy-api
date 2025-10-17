@@ -21,7 +21,7 @@ enum CertificateType {
 
 enum CertificateStatus {
   PENDING
-  COMPLETED
+  ON_TIME
 }
 
 model Certificate {
@@ -30,6 +30,7 @@ model Certificate {
   cnpj                String
   type                CertificateType   // só aceita A1 ou A3
   expiresAt           DateTime
+  password            String?           // senha do certificado (criptografada)
   status              CertificateStatus @default(PENDING)
   createdAt           DateTime          @default(now())
 }
