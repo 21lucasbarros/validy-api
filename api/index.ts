@@ -13,9 +13,6 @@ const CertificateSchema = z.object({
     .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/, "CNPJ inválido"),
   type: z.enum(["A1", "A3"]), // só A1 e A3
   expiresAt: z.string().datetime(),
-  notificationEmails: z
-    .array(z.string().email())
-    .min(1, "Pelo menos um email é necessário"),
   status: z.enum(["PENDING", "COMPLETED"]).optional(),
 });
 
@@ -42,7 +39,6 @@ const app = new Elysia()
           cnpj: data.cnpj,
           type: data.type as CertificateType,
           expiresAt: new Date(data.expiresAt),
-          notificationEmails: data.notificationEmails,
         },
       });
 
@@ -65,7 +61,6 @@ const app = new Elysia()
         data: {
           ...data,
           expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
-          notificationEmails: data.notificationEmails,
         },
       });
     } catch (err) {

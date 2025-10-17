@@ -30,7 +30,6 @@ model Certificate {
   cnpj                String
   type                CertificateType   // só aceita A1 ou A3
   expiresAt           DateTime
-  notificationEmails  String[]          // array de emails para notificação
   status              CertificateStatus @default(PENDING)
   createdAt           DateTime          @default(now())
 }
