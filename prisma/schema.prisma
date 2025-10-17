@@ -22,6 +22,7 @@ enum CertificateType {
 enum CertificateStatus {
   PENDING
   ON_TIME
+  EXPIRED
 }
 
 model Certificate {

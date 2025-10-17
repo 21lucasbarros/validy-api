@@ -18,17 +18,40 @@ const CertificateSchema = z.object({
   type: z.enum(["A1", "A3"]), // só A1 e A3
   expiresAt: z.string().datetime(),
   password: z.string().optional(),
-  status: z.enum(["PENDING", "ON_TIME"]).optional(),
+  status: z.enum(["PENDING", "ON_TIME", "EXPIRED"]).optional(),
 });
+
+// Função para calcular o status baseado na data de vencimento
+const calculateStatus = (
+  expiresAt: Date
+): "EXPIRED" | "ON_TIME" | "PENDING" => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const expirationDate = new Date(expiresAt);
+  expirationDate.setHours(0, 0, 0, 0);
+
+  if (expirationDate < today) {
+    return "EXPIRED";
+  }
+
+  return "PENDING"; // Por padrão, novos certificados são PENDING
+};
 
 const app = new Elysia()
   .use(cors())
 
   // listar todos
   .get("/certificates", async () => {
-    return await prisma.certificate.findMany({
+    const certificates = await prisma.certificate.findMany({
       orderBy: { expiresAt: "asc" },
     });
+
+    // Recalcular status baseado na data de vencimento
+    return certificates.map((cert) => ({
+      ...cert,
+      status: calculateStatus(cert.expiresAt),
+    }));
   })
 
   // listar senhas descriptografadas
@@ -66,13 +89,17 @@ const app = new Elysia()
         ? CryptoJS.AES.encrypt(data.password, SECRET_KEY).toString()
         : null;
 
+      const expirationDate = new Date(data.expiresAt);
+      const calculatedStatus = calculateStatus(expirationDate);
+
       const certificate = await prisma.certificate.create({
         data: {
           name: data.name,
           cnpj: data.cnpj,
           type: data.type as CertificateType,
-          expiresAt: new Date(data.expiresAt),
+          expiresAt: expirationDate,
           password: encryptedPassword,
+          status: calculatedStatus,
         },
       });
 
