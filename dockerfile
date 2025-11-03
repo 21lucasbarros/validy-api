@@ -7,6 +7,9 @@ WORKDIR /app
 # Copia configs principais
 COPY package.json tsconfig.json bun.lock ./
 
+# Copia a pasta prisma (necessária para o postinstall gerar o Prisma Client)
+COPY prisma ./prisma
+
 # Instala dependências
 RUN bun install
 
