@@ -48,7 +48,7 @@ const app = new Elysia()
       ...cert,
       password: cert.password
         ? CryptoJS.AES.decrypt(cert.password, SECRET_KEY).toString(
-            CryptoJS.enc.Utf8
+            CryptoJS.enc.Utf8,
           )
         : null,
     }));
@@ -122,8 +122,11 @@ const app = new Elysia()
   // teste
   .get("/", () => "✅ Validy API is running!")
 
-  .listen(3333);
+  .listen({
+    port: Number(process.env.PORT) || 8080,
+    hostname: "0.0.0.0",
+  });
 
 console.log(
-  `🦊 Validy API running at http://${app.server?.hostname}:${app.server?.port}`
+  `🦊 Validy API running at http://${app.server?.hostname}:${app.server?.port}`,
 );
