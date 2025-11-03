@@ -6,16 +6,16 @@ import CryptoJS from "crypto-js";
 
 const prisma = new PrismaClient();
 
-// Chave secreta para criptografia (em produção, use variável de ambiente)
+// Chave secreta (usa variável de ambiente em produção)
 const SECRET_KEY = process.env.ENCRYPTION_KEY || "validy-secret-key-2024";
 
-// validações com Zod
+// Validação com Zod
 const CertificateSchema = z.object({
   name: z.string().min(2, "Nome inválido"),
   cnpj: z
     .string()
     .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/, "CNPJ inválido"),
-  type: z.enum(["A1", "A3"]), // só A1 e A3
+  type: z.enum(["A1", "A3"]),
   expiresAt: z.string().datetime(),
   password: z.string().optional(),
   status: z.enum(["PENDING", "ON_TIME"]).optional(),
@@ -24,14 +24,14 @@ const CertificateSchema = z.object({
 const app = new Elysia()
   .use(cors())
 
-  // listar todos
+  // Listar todos os certificados
   .get("/certificates", async () => {
     return await prisma.certificate.findMany({
       orderBy: { expiresAt: "asc" },
     });
   })
 
-  // listar senhas descriptografadas
+  // Listar senhas descriptografadas
   .get("/certificates/passwords", async () => {
     const certificates = await prisma.certificate.findMany({
       select: {
@@ -43,7 +43,7 @@ const app = new Elysia()
       orderBy: { name: "asc" },
     });
 
-    // Descriptografar senhas
+    // Descriptografar as senhas antes de retornar
     return certificates.map((cert) => ({
       ...cert,
       password: cert.password
@@ -54,14 +54,12 @@ const app = new Elysia()
     }));
   })
 
-  // criar novo
+  // Criar novo certificado
   .post("/certificates", async ({ body, set }) => {
     try {
       console.log("Recebendo body:", body);
       const data = CertificateSchema.parse(body);
-      console.log("Dados validados:", data);
 
-      // Criptografar senha se fornecida
       const encryptedPassword = data.password
         ? CryptoJS.AES.encrypt(data.password, SECRET_KEY).toString()
         : null;
@@ -85,7 +83,7 @@ const app = new Elysia()
     }
   })
 
-  // atualizar
+  // Atualizar certificado
   .put("/certificates/:id", async ({ params, body, set }) => {
     try {
       const id = Number(params.id);
@@ -103,7 +101,7 @@ const app = new Elysia()
     }
   })
 
-  // marcar como no prazo
+  // Marcar como "no prazo"
   .patch("/certificates/:id/complete", async ({ params }) => {
     const id = Number(params.id);
     return await prisma.certificate.update({
@@ -112,21 +110,20 @@ const app = new Elysia()
     });
   })
 
-  // deletar
+  // Deletar certificado
   .delete("/certificates/:id", async ({ params }) => {
     const id = Number(params.id);
     await prisma.certificate.delete({ where: { id } });
     return { message: "Certificado deletado com sucesso" };
   })
 
-  // teste
-  .get("/", () => "✅ Validy API is running!")
+  // Rota teste (healthcheck)
+  .get("/", () => "✅ Validy API is running!");
 
-  .listen({
-    port: Number(process.env.PORT) || 8080,
-    hostname: "0.0.0.0",
-  });
+// Iniciar servidor
+const port = Number(process.env.PORT) || 8080;
+const hostname = "0.0.0.0";
 
-console.log(
-  `🦊 Validy API running at http://${app.server?.hostname}:${app.server?.port}`,
-);
+app.listen({ port, hostname });
+
+console.log(`🦊 Validy API running on http://${hostname}:${port}`);
