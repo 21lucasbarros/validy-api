@@ -13,7 +13,7 @@ RUN bunx prisma generate
 # Compila o projeto TypeScript
 RUN bun run build
 
-# Etapa 2: execução
+# Etapa dois: execução
 FROM oven/bun:1-slim
 WORKDIR /app
 
