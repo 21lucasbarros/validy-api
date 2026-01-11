@@ -4,7 +4,7 @@
   "description": "API da Validy construída com Elysia, TypeScript e Prisma.",
   "type": "module",
   "scripts": {
-    "dev": "bun run --watch api/index.ts",
+    "dev": "bun run --watch src/index.ts",
     "build": "prisma generate",
     "postinstall": "prisma generate",
     "db:migrate:deploy": "prisma migrate deploy",
