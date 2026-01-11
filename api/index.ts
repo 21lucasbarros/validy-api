@@ -4,26 +4,29 @@ import { z } from "zod";
 import cors from "@elysiajs/cors";
 import CryptoJS from "crypto-js";
 
-const prisma = new PrismaClient();
+// --- CONFIGURAÇÃO DO PRISMA (SINGLETON) ---
+// Impede a criação de novas conexões a cada "cold start" ou "hot reload"
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+const prisma = globalForPrisma.prisma || new PrismaClient();
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-// Chave secreta para criptografia (em produção, use variável de ambiente)
+// Chave secreta para criptografia
 const SECRET_KEY = process.env.ENCRYPTION_KEY || "validy-secret-key-2024";
 
-// validações com Zod
+// --- VALIDAÇÕES E UTILITÁRIOS ---
 const CertificateSchema = z.object({
   name: z.string().min(2, "Nome inválido"),
   cnpj: z
     .string()
     .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/, "CNPJ inválido"),
-  type: z.enum(["A1", "A3"]), // só A1 e A3
+  type: z.enum(["A1", "A3"]),
   expiresAt: z.string().datetime(),
   password: z.string().optional(),
   status: z.enum(["PENDING", "ON_TIME", "EXPIRED"]).optional(),
 });
 
-// Função para calcular o status baseado na data de vencimento
 const calculateStatus = (
-  expiresAt: Date
+  expiresAt: Date,
 ): "EXPIRED" | "ON_TIME" | "PENDING" => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -31,30 +34,33 @@ const calculateStatus = (
   const expirationDate = new Date(expiresAt);
   expirationDate.setHours(0, 0, 0, 0);
 
-  if (expirationDate < today) {
-    return "EXPIRED";
-  }
-
-  return "PENDING"; // Por padrão, novos certificados são PENDING
+  if (expirationDate < today) return "EXPIRED";
+  return "PENDING";
 };
 
+// --- DEFINIÇÃO DA API ---
 const app = new Elysia()
   .use(cors())
 
-  // listar todos
+  // Rota de teste
+  .get("/", () => ({
+    status: "online",
+    message: "✅ Validy API is running on Bun!",
+  }))
+
+  // Listar todos os certificados
   .get("/certificates", async () => {
     const certificates = await prisma.certificate.findMany({
       orderBy: { expiresAt: "asc" },
     });
 
-    // Recalcular status baseado na data de vencimento
     return certificates.map((cert) => ({
       ...cert,
       status: calculateStatus(cert.expiresAt),
     }));
   })
 
-  // listar senhas descriptografadas
+  // Listar senhas descriptografadas
   .get("/certificates/passwords", async () => {
     const certificates = await prisma.certificate.findMany({
       select: {
@@ -66,31 +72,27 @@ const app = new Elysia()
       orderBy: { name: "asc" },
     });
 
-    // Descriptografar senhas
     return certificates.map((cert) => ({
       ...cert,
       password: cert.password
         ? CryptoJS.AES.decrypt(cert.password, SECRET_KEY).toString(
-            CryptoJS.enc.Utf8
+            CryptoJS.enc.Utf8,
           )
         : null,
     }));
   })
 
-  // criar novo
+  // Criar novo certificado
   .post("/certificates", async ({ body, set }) => {
     try {
-      console.log("Recebendo body:", body);
       const data = CertificateSchema.parse(body);
-      console.log("Dados validados:", data);
 
-      // Criptografar senha se fornecida
       const encryptedPassword = data.password
         ? CryptoJS.AES.encrypt(data.password, SECRET_KEY).toString()
         : null;
 
       const expirationDate = new Date(data.expiresAt);
-      const calculatedStatus = calculateStatus(expirationDate);
+      const initialStatus = calculateStatus(expirationDate);
 
       const certificate = await prisma.certificate.create({
         data: {
@@ -99,24 +101,23 @@ const app = new Elysia()
           type: data.type as CertificateType,
           expiresAt: expirationDate,
           password: encryptedPassword,
-          status: calculatedStatus,
+          status: initialStatus,
         },
       });
 
-      console.log("Certificado criado:", certificate);
       return certificate;
     } catch (err) {
-      console.error("Erro ao criar certificado:", err);
       set.status = 400;
       return { error: "Dados inválidos", details: err };
     }
   })
 
-  // atualizar
+  // Atualizar certificado
   .put("/certificates/:id", async ({ params, body, set }) => {
     try {
       const id = Number(params.id);
       const data = CertificateSchema.partial().parse(body);
+
       return await prisma.certificate.update({
         where: { id },
         data: {
@@ -130,7 +131,7 @@ const app = new Elysia()
     }
   })
 
-  // marcar como no prazo
+  // Marcar como concluído/no prazo
   .patch("/certificates/:id/complete", async ({ params }) => {
     const id = Number(params.id);
     return await prisma.certificate.update({
@@ -139,15 +140,19 @@ const app = new Elysia()
     });
   })
 
-  // deletar
+  // Deletar certificado
   .delete("/certificates/:id", async ({ params }) => {
     const id = Number(params.id);
     await prisma.certificate.delete({ where: { id } });
     return { message: "Certificado deletado com sucesso" };
-  })
+  });
 
-  // teste
-  .get("/", () => "✅ Validy API is running!");
+// --- EXPORTAÇÃO PARA VERCEL (BUN RUNTIME) ---
+export default app;
 
-// Handler para Vercel serverless functions
-export default app.fetch;
+// Execução local
+if (process.env.NODE_ENV !== "production") {
+  const port = process.env.PORT || 8080;
+  app.listen(port);
+  console.log(`🦊 Validy API running locally at http://localhost:${port}`);
+}

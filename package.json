@@ -2,40 +2,26 @@
   "name": "validy-api",
   "version": "1.0.0",
   "description": "API da Validy construída com Elysia, TypeScript e Prisma.",
-  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "bun run src/index.ts",
-    "build": "tsc",
-    "start": "bun run dist/index.js",
-    "postinstall": "bunx prisma generate",
-    "db:generate": "bunx prisma generate",
-    "db:migrate": "bunx prisma migrate dev",
+    "dev": "bun run --watch api/index.ts",
+    "build": "prisma generate",
+    "postinstall": "prisma generate",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "bunx prisma studio"
   },
-  "keywords": [
-    "elysia",
-    "typescript",
-    "prisma",
-    "api",
-    "validy"
-  ],
-  "author": "Lucas Barros Simon",
-  "license": "ISC",
   "dependencies": {
-    "@elysiajs/cors": "^1.4.0",
-    "@prisma/client": "^6.17.1",
-    "bcryptjs": "^3.0.2",
+    "@elysiajs/cors": "^1.2.0",
+    "@prisma/client": "^6.1.0",
+    "bcryptjs": "^2.4.3",
     "crypto-js": "^4.2.0",
-    "elysia": "^1.4.12",
-    "zod": "^4.1.12"
+    "elysia": "^1.2.10",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
-    "prisma": "^6.17.1",
-    "@types/bcryptjs": "^3.0.0",
+    "prisma": "^6.1.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/crypto-js": "^4.2.2",
-    "@types/node": "^24.7.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.7.2"
   }
 }
