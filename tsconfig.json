@@ -1,25 +1,25 @@
 {
   "compilerOptions": {
     /* ====== Básico ====== */
-    "target": "ES2021" /* Define a versão de JS gerada */,
-    "module": "ESNext" /* Módulos compatíveis com Node moderno */,
-    "moduleResolution": "node" /* Resolve imports no estilo Node */,
-    "rootDir": "src" /* Código-fonte fica em src/ */,
-    "outDir": "dist" /* Código compilado vai pra dist/ */,
-    "types": ["node"] /* Usa tipos do Node, não do Bun */,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["bun", "node"] /* Adicionado bun para reconhecer o runtime */,
 
     /* ====== Compatibilidade ====== */
-    "esModuleInterop": true /* Suporte a import/export modernos */,
-    "forceConsistentCasingInFileNames": true /* Garante consistência nos imports */,
-    "skipLibCheck": true /* Ignora checagem de tipos em libs */,
-    "strict": true /* Ativa verificações rigorosas */,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "allowJs": true,
+    "noEmit": true /* O Bun não precisa gerar arquivos .js no build */,
 
-    /* ====== JSX (se quiser usar depois) ====== */
-    "jsx": "react" /* Mantido igual ao teu original */
+    /* ====== JSX ====== */
+    "jsx": "react-jsx",
   },
-  "include": ["src"] /* Inclui a pasta src */,
-  "exclude": [
-    "node_modules",
-    "dist"
-  ] /* Evita recompilar pastas desnecessárias */
+  "include": [
+    "src/**/*",
+    "api/**/*",
+  ] /* Garante que ambas as pastas sejam mapeadas */,
+  "exclude": ["node_modules"],
 }
