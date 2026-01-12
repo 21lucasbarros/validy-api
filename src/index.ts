@@ -26,7 +26,7 @@ const CertificateSchema = z.object({
 });
 
 const calculateStatus = (
-  expiresAt: Date,
+  expiresAt: Date
 ): "EXPIRED" | "ON_TIME" | "PENDING" => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -45,7 +45,7 @@ const app = new Elysia()
   // Rota de teste
   .get("/", () => ({
     status: "online",
-    message: "✅ Validy API is running on Bun!",
+    message: "Validy API is running on Bun!",
   }))
 
   // Listar todos os certificados
@@ -76,7 +76,7 @@ const app = new Elysia()
       ...cert,
       password: cert.password
         ? CryptoJS.AES.decrypt(cert.password, SECRET_KEY).toString(
-            CryptoJS.enc.Utf8,
+            CryptoJS.enc.Utf8
           )
         : null,
     }));
@@ -154,5 +154,5 @@ export default app;
 if (process.env.NODE_ENV !== "production") {
   const port = process.env.PORT || 8080;
   app.listen(port);
-  console.log(`🦊 Validy API running locally at http://localhost:${port}`);
+  console.log(`Validy API running locally at http://localhost:${port}`);
 }
