@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "bunVersion": "1.x",
+  "regions": ["gru1"],
   "rewrites": [{ "source": "/(.*)", "destination": "/src/index.ts" }]
 }
